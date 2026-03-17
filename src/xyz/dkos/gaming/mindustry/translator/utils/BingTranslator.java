@@ -12,16 +12,13 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class BingTranslator {
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
     private static String token = null;
     private static long tokenExpiration = 0;
 
-    /**
-     * Translates a given text using Microsoft's Edge Translation API.
-     */
     public static void translate(String text, String toLang, Cons<String> onSuccess, Cons<Throwable> onFailure) {
-        // Fetch new token if the current one has expired (validity is roughly 10 minutes)
+        // Token validity is roughly 10 minutes; fetch a new one if expired
         if (System.currentTimeMillis() > tokenExpiration || token == null) {
             fetchToken(
                     () -> doTranslate(text, toLang, onSuccess, onFailure),
@@ -49,22 +46,23 @@ public class BingTranslator {
                 conn.setReadTimeout(10000);
 
                 int status = conn.getResponseCode();
-                if (status == 200) {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                        StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
-                        }
-
-                        token = response.toString();
-                        // Expire slightly before the true expiration time (9 minutes)
-                        tokenExpiration = System.currentTimeMillis() + 9 * 60 * 1000;
-
-                        Core.app.post(onSuccess);
-                    }
-                } else {
+                if (status != 200) {
                     Core.app.post(() -> onFailure.get(new RuntimeException("Failed to fetch translation token. Status: " + status)));
+                    return;
+                }
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+
+                    token = response.toString();
+                    // Expire safely before the true 10-minute expiration limit
+                    tokenExpiration = System.currentTimeMillis() + 9 * 60 * 1000;
+
+                    Core.app.post(onSuccess);
                 }
             } catch (Exception e) {
                 Core.app.post(() -> onFailure.get(e));
@@ -100,30 +98,31 @@ public class BingTranslator {
                 }
 
                 int status = conn.getResponseCode();
-                if (status == 200) {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                        StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
-                        }
+                if (status != 200) {
+                    Core.app.post(() -> onFailure.get(new RuntimeException("Translation API returned an error. Status: " + status)));
+                    return;
+                }
 
-                        Jval json = Jval.read(response.toString());
-                        if (json.isArray() && json.asArray().size > 0) {
-                            Jval first = json.asArray().get(0);
-                            if (first.has("translations")) {
-                                Jval translations = first.get("translations");
-                                if (translations.isArray() && translations.asArray().size > 0) {
-                                    String result = translations.asArray().get(0).getString("text", "");
-                                    Core.app.post(() -> onSuccess.get(result));
-                                    return;
-                                }
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+
+                    Jval json = Jval.read(response.toString());
+                    if (json.isArray() && json.asArray().size > 0) {
+                        Jval first = json.asArray().get(0);
+                        if (first.has("translations")) {
+                            Jval translations = first.get("translations");
+                            if (translations.isArray() && translations.asArray().size > 0) {
+                                String result = translations.asArray().get(0).getString("text", "");
+                                Core.app.post(() -> onSuccess.get(result));
+                                return;
                             }
                         }
-                        Core.app.post(() -> onFailure.get(new RuntimeException("Invalid translation response structure.")));
                     }
-                } else {
-                    Core.app.post(() -> onFailure.get(new RuntimeException("Translation API returned an error. Status: " + status)));
+                    Core.app.post(() -> onFailure.get(new RuntimeException("Invalid translation response structure.")));
                 }
             } catch (Exception e) {
                 Core.app.post(() -> onFailure.get(e));
