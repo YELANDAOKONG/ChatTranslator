@@ -2,7 +2,6 @@ package xyz.dkos.gaming.mindustry.translator.utils;
 
 import arc.Core;
 import arc.func.Cons;
-import arc.util.async.Threads;
 import arc.util.serialization.Jval;
 
 import java.io.BufferedReader;
@@ -33,8 +32,14 @@ public class BingTranslator {
         }
     }
 
+    private static void runAsync(Runnable task) {
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
     private static void fetchToken(Runnable onSuccess, Cons<Throwable> onFailure) {
-        Threads.daemon(() -> {
+        runAsync(() -> {
             try {
                 URL url = new URL("https://edge.microsoft.com/translate/auth");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -68,11 +73,11 @@ public class BingTranslator {
     }
 
     private static void doTranslate(String text, String toLang, Cons<String> onSuccess, Cons<Throwable> onFailure) {
-        Threads.daemon(() -> {
+        runAsync(() -> {
             try {
                 String urlString = "https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=" + toLang + "&api-version=3.0&includeSentenceLength=true";
 
-                Jval.Jarray bodyArray = Jval.newArray();
+                Jval bodyArray = Jval.newArray();
                 Jval textObj = Jval.newObject();
                 textObj.put("Text", text);
                 bodyArray.add(textObj);
