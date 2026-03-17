@@ -8,7 +8,7 @@ name: "chat-translator"
 author: "Yelandaokong"
 
 #the fully qualified main class of the mod
-main: "example.ExampleJavaMod"
+main: "xyz.dkos.gaming.mindustry.translator.ModMain"
 
 #the mod description as seen in the mod dialog
 description: "A Mindustry chat translator mod."
