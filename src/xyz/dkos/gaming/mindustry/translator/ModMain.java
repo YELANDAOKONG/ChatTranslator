@@ -12,7 +12,10 @@ import xyz.dkos.gaming.mindustry.translator.utils.GoogleTranslator;
 public class ModMain extends Mod {
 
     private static final String PREF_ENABLED = "chat-translator-enabled";
-    private static final String PREF_USE_GOOGLE = "chat-translator-use-google";
+    private static final String PREF_ENGINE = "chat-translator-engine";
+
+    // Array of supported engines to cycle through
+    private static final String[] ENGINES = { "Google", "Bing" };
 
     public ModMain() {
         Log.info("Chat Translator Loaded.");
@@ -20,7 +23,6 @@ public class ModMain extends Mod {
 
     @Override
     public void init() {
-        // Prevent initialization on headless servers
         if (Vars.headless) {
             return;
         }
@@ -31,10 +33,6 @@ public class ModMain extends Mod {
         Log.info("Chat Translator Initialized.");
     }
 
-    /**
-     * Safely injects our settings into the Mindustry Settings Menu.
-     * Uses custom rows to ensure labels render correctly without forcing bundle dependencies.
-     */
     private void buildSettingsUI() {
         if (Vars.ui == null || Vars.ui.settings == null) {
             return;
@@ -44,19 +42,38 @@ public class ModMain extends Mod {
             table.check("Enable Chat Translator", Core.settings.getBool(PREF_ENABLED, true),
                     b -> Core.settings.put(PREF_ENABLED, b)).left().row();
 
-            table.check("Use Google Translate (Off = Bing)", Core.settings.getBool(PREF_USE_GOOGLE, false),
-                    b -> Core.settings.put(PREF_USE_GOOGLE, b)).left().row();
+            // Mindustry alternative to Dropdown: A cycle button
+            table.table(t -> {
+                t.add("Translation Engine: ").left().padRight(15f);
+
+                t.button(b -> {
+                    // Dynamically update the label text based on current settings
+                    b.label(() -> Core.settings.getString(PREF_ENGINE, "Bing"));
+                }, () -> {
+                    // Cycle to the next engine on click
+                    String current = Core.settings.getString(PREF_ENGINE, "Bing");
+                    int currentIndex = 0;
+
+                    for (int i = 0; i < ENGINES.length; i++) {
+                        if (ENGINES[i].equalsIgnoreCase(current)) {
+                            currentIndex = i;
+                            break;
+                        }
+                    }
+
+                    int nextIndex = (currentIndex + 1) % ENGINES.length;
+                    Core.settings.put(PREF_ENGINE, ENGINES[nextIndex]);
+                }).size(120f, 40f);
+            }).left().padTop(5f).row();
         });
     }
 
     private void registerChatListener() {
         Events.on(PlayerChatEvent.class, event -> {
-            // Early return if feature is disabled in settings
             if (!Core.settings.getBool(PREF_ENABLED, true)) {
                 return;
             }
 
-            // Ignore system messages or messages from ourselves
             if (event.player == null || event.player == Vars.player) {
                 return;
             }
@@ -65,14 +82,13 @@ public class ModMain extends Mod {
                 return;
             }
 
-            boolean useGoogle = Core.settings.getBool(PREF_USE_GOOGLE, false);
-            String targetLang = getClientLanguage(useGoogle);
+            String engine = Core.settings.getString(PREF_ENGINE, "Bing");
+            String targetLang = getClientLanguage(engine);
 
             if (targetLang == null || targetLang.isEmpty()) {
                 return;
             }
 
-            // Shared callback logic for both engines
             arc.func.Cons<String> onSuccess = translated -> {
                 if (!translated.equalsIgnoreCase(event.message.trim()) && Vars.ui != null && Vars.ui.chatfrag != null) {
                     Vars.ui.chatfrag.addMessage("[lightgray][TR] " + event.player.name + "[white]: " + translated);
@@ -83,8 +99,7 @@ public class ModMain extends Mod {
                 Log.err("Chat Translator: Failed to process translation.", error);
             };
 
-            // Route to correct translation engine
-            if (useGoogle) {
+            if ("Google".equalsIgnoreCase(engine)) {
                 GoogleTranslator.translate(event.message, targetLang, onSuccess, onFailure);
             } else {
                 BingTranslator.translate(event.message, targetLang, onSuccess, onFailure);
@@ -93,13 +108,13 @@ public class ModMain extends Mod {
     }
 
     /**
-     * Resolves the current client language code.
-     * Maps Chinese locales correctly depending on the required format of the targeted API.
+     * Resolves the correct language code for the selected API.
+     * Ensures support for ALL Mindustry locales (e.g., pt_BR, ru, es, zh_CN).
      */
-    private String getClientLanguage(boolean isGoogleEngine) {
+    private String getClientLanguage(String engine) {
         String locale = Core.settings.getString("locale", "default");
 
-        if (locale.equals("default")) {
+        if ("default".equals(locale)) {
             if (Core.bundle != null && Core.bundle.getLocale() != null) {
                 locale = Core.bundle.getLocale().toString();
             } else {
@@ -107,19 +122,18 @@ public class ModMain extends Mod {
             }
         }
 
-        if (locale.contains("_")) {
-            String[] parts = locale.split("_");
-            if (parts[0].equalsIgnoreCase("zh")) {
-                boolean isTraditional = locale.equalsIgnoreCase("zh_TW");
+        // Convert Mindustry locale format (e.g., pt_BR) to web standard format (pt-BR)
+        locale = locale.replace('_', '-');
 
-                // Google expects zh-CN / zh-TW, whereas Bing expects zh-Hans / zh-Hant
-                if (isGoogleEngine) {
-                    return isTraditional ? "zh-TW" : "zh-CN";
-                } else {
-                    return isTraditional ? "zh-Hant" : "zh-Hans";
-                }
+        // Handle specific Chinese character sets required by different APIs
+        if (locale.toLowerCase().startsWith("zh")) {
+            boolean isTraditional = locale.equalsIgnoreCase("zh-TW") || locale.equalsIgnoreCase("zh-HK");
+
+            if ("Google".equalsIgnoreCase(engine)) {
+                return isTraditional ? "zh-TW" : "zh-CN";
+            } else {
+                return isTraditional ? "zh-Hant" : "zh-Hans";
             }
-            return parts[0];
         }
 
         return locale;
