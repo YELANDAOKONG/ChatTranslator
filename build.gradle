@@ -38,7 +38,7 @@ dependencies{
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 
-    implementation("com.openai:openai-java:4.28.0")
+    // implementation("com.openai:openai-java:4.28.0")
 }
 
 //force arc version
