@@ -15,6 +15,7 @@ import xyz.dkos.gaming.mindustry.translator.utils.OpenAITranslator;
 public class ModMain extends Mod {
 
     private static final String PREF_ENABLED = "chat-translator-enabled";
+    private static final String PREF_TRANSLATE_SERVER = "chat-translator-server-enabled";
     private static final String PREF_ENGINE = "chat-translator-engine";
 
     // OpenAI Config Keys
@@ -53,6 +54,9 @@ public class ModMain extends Mod {
         Vars.ui.settings.addCategory("Translator", "chat", table -> {
             table.check("Enable Chat Translator", Core.settings.getBool(PREF_ENABLED, true),
                     b -> Core.settings.put(PREF_ENABLED, b)).left().row();
+
+            table.check("Translate Server Messages", Core.settings.getBool(PREF_TRANSLATE_SERVER, false),
+                    b -> Core.settings.put(PREF_TRANSLATE_SERVER, b)).left().row();
 
             table.table(t -> {
                 t.add("Translation Engine: ").left().padRight(15f);
@@ -135,7 +139,21 @@ public class ModMain extends Mod {
 
     private void registerChatListener() {
         Events.on(PlayerChatEvent.class, event -> {
-            if (!Core.settings.getBool(PREF_ENABLED, true) || event.player == null || event.player == Vars.player || event.message == null || event.message.trim().isEmpty()) {
+            // Check if feature is globally disabled or message is empty
+            if (!Core.settings.getBool(PREF_ENABLED, true) || event.message == null || event.message.trim().isEmpty()) {
+                return;
+            }
+
+            boolean isServerMessage = (event.player == null);
+            boolean isOwnMessage = (event.player == Vars.player);
+
+            // Never translate messages we sent ourselves
+            if (isOwnMessage) {
+                return;
+            }
+
+            // Only translate server messages if the setting is enabled
+            if (isServerMessage && !Core.settings.getBool(PREF_TRANSLATE_SERVER, false)) {
                 return;
             }
 
@@ -146,14 +164,22 @@ public class ModMain extends Mod {
                 return;
             }
 
+            // Setup display name based on whether it is a player or server
+            String senderName = isServerMessage ? "[Server]" : event.player.name;
+
             arc.func.Cons<String> onSuccess = translated -> {
                 if (!translated.equalsIgnoreCase(event.message.trim()) && Vars.ui != null && Vars.ui.chatfrag != null) {
-                    Vars.ui.chatfrag.addMessage("[lightgray][TR] " + event.player.name + "[white]: " + translated);
+                    Vars.ui.chatfrag.addMessage("[lightgray][TR] " + senderName + "[white]: " + translated);
                 }
             };
 
             arc.func.Cons<Throwable> onFailure = error -> {
                 Log.err("Chat Translator: Failed to process translation.", error);
+
+                // Show the error inside the chat fragment
+                if (Vars.ui != null && Vars.ui.chatfrag != null) {
+                    Vars.ui.chatfrag.addMessage("[crimson][TR Error][] Failed to translate: " + error.getMessage());
+                }
             };
 
             switch (engine.toLowerCase()) {
@@ -173,7 +199,7 @@ public class ModMain extends Mod {
         String promptTemplate = Core.settings.getString(PREF_OPENAI_PROMPT, DEFAULT_PROMPT);
 
         if (key.trim().isEmpty()) {
-            Log.err("OpenAI API Key is missing. Please configure it in the translation settings.");
+            onFailure.get(new IllegalArgumentException("OpenAI API Key is missing. Please configure it in settings."));
             return;
         }
 
