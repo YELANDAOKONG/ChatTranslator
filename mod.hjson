@@ -1,17 +1,17 @@
 #the mod name as displayed in-game
-displayName: "Java Mod Template"
+displayName: "Chat Translator"
 
 #the internal name of your mod
-name: "example-java-mod"
+name: "chat-translator"
 
 #your name
-author: "You"
+author: "Yelandaokong"
 
 #the fully qualified main class of the mod
 main: "example.ExampleJavaMod"
 
 #the mod description as seen in the mod dialog
-description: "A Mindustry Java mod template."
+description: "A Mindustry chat translator mod."
 
 #the mod version
 version: 1.0
