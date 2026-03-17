@@ -16,6 +16,10 @@ public class ModMain extends Mod {
 
     @Override
     public void init() {
+        if (Vars.headless) {
+            return;
+        }
+
         Log.info("Chat Translator Initialized.");
 
         Events.on(PlayerChatEvent.class, event -> {
