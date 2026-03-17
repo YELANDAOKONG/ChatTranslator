@@ -1,15 +1,17 @@
 package xyz.dkos.gaming.mindustry.translator.utils;
 
-import arc.Core;
-import arc.func.Cons;
-import arc.util.serialization.Jval;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+
+import arc.Core;
+import arc.func.Cons;
+import arc.util.serialization.Jval;
+
+import xyz.dkos.gaming.mindustry.translator.ModMain;
 
 public class BingTranslator {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
@@ -18,7 +20,6 @@ public class BingTranslator {
     private static long tokenExpiration = 0;
 
     public static void translate(String text, String toLang, Cons<String> onSuccess, Cons<Throwable> onFailure) {
-        // Token validity is roughly 10 minutes; fetch a new one if expired
         if (System.currentTimeMillis() > tokenExpiration || token == null) {
             fetchToken(
                     () -> doTranslate(text, toLang, onSuccess, onFailure),
@@ -38,6 +39,8 @@ public class BingTranslator {
     private static void fetchToken(Runnable onSuccess, Cons<Throwable> onFailure) {
         runAsync(() -> {
             try {
+                ModMain.debugLog("Bing: Fetching translation token...");
+
                 URL url = new URL("https://edge.microsoft.com/translate/auth");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -47,6 +50,7 @@ public class BingTranslator {
 
                 int status = conn.getResponseCode();
                 if (status != 200) {
+                    ModMain.debugLog("Bing Token Fetch Failed. Status: " + status);
                     Core.app.post(() -> onFailure.get(new RuntimeException("Failed to fetch translation token. Status: " + status)));
                     return;
                 }
@@ -59,9 +63,9 @@ public class BingTranslator {
                     }
 
                     token = response.toString();
-                    // Expire safely before the true 10-minute expiration limit
                     tokenExpiration = System.currentTimeMillis() + 9 * 60 * 1000;
 
+                    ModMain.debugLog("Bing: Token fetched successfully.");
                     Core.app.post(onSuccess);
                 }
             } catch (Exception e) {
@@ -82,6 +86,9 @@ public class BingTranslator {
 
                 String bodyString = bodyArray.toString(Jval.Jformat.plain);
 
+                ModMain.debugLog("Bing Translate Request URL: " + urlString);
+                ModMain.debugLog("Bing Translate Payload: " + bodyString);
+
                 URL url = new URL(urlString);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
@@ -98,6 +105,8 @@ public class BingTranslator {
                 }
 
                 int status = conn.getResponseCode();
+                ModMain.debugLog("Bing Translate Response Status: " + status);
+
                 if (status != 200) {
                     Core.app.post(() -> onFailure.get(new RuntimeException("Translation API returned an error. Status: " + status)));
                     return;
@@ -109,6 +118,8 @@ public class BingTranslator {
                     while ((line = reader.readLine()) != null) {
                         response.append(line);
                     }
+
+                    ModMain.debugLog("Bing Translate Raw Response: " + response);
 
                     Jval json = Jval.read(response.toString());
                     if (json.isArray() && json.asArray().size > 0) {

@@ -1,9 +1,5 @@
 package xyz.dkos.gaming.mindustry.translator.utils;
 
-import arc.Core;
-import arc.func.Cons;
-import arc.util.serialization.Jval;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -11,17 +7,22 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import arc.Core;
+import arc.func.Cons;
+import arc.util.serialization.Jval;
+
+import xyz.dkos.gaming.mindustry.translator.ModMain;
+
 public class GoogleTranslator {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
-    /**
-     * Translates text using the public Google Translate API.
-     */
     public static void translate(String text, String toLang, Cons<String> onSuccess, Cons<Throwable> onFailure) {
         Thread thread = new Thread(() -> {
             try {
                 String encodedText = URLEncoder.encode(text, StandardCharsets.UTF_8.toString());
                 String urlString = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" + toLang + "&dt=t&q=" + encodedText;
+
+                ModMain.debugLog("Google Translate Request URL: " + urlString);
 
                 URL url = new URL(urlString);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -31,6 +32,8 @@ public class GoogleTranslator {
                 conn.setReadTimeout(10000);
 
                 int status = conn.getResponseCode();
+                ModMain.debugLog("Google Translate Response Status: " + status);
+
                 if (status != 200) {
                     Core.app.post(() -> onFailure.get(new RuntimeException("Google API returned status: " + status)));
                     return;
@@ -43,7 +46,8 @@ public class GoogleTranslator {
                         response.append(line);
                     }
 
-                    // Google returns a nested array: [[[ "Translated text", "Original text" ], ...]]
+                    ModMain.debugLog("Google Translate Raw Response: " + response);
+
                     Jval json = Jval.read(response.toString());
                     Jval.JsonArray rootArray = json.asArray();
 
