@@ -7,6 +7,29 @@ import arc.Core;
  */
 public class TranslatorConfig {
 
+    public static class Lang {
+        public String code;
+        public String name;
+        public Lang(String code, String name) {
+            this.code = code;
+            this.name = name;
+        }
+    }
+
+    // Predefined languages for outgoing translation
+    public static final Lang[] LANGUAGES = {
+            new Lang("en", "English"),
+            new Lang("zh-CN", "简体中文 (Simplified Chinese)"),
+            new Lang("zh-TW", "繁體中文 (Traditional Chinese)"),
+            new Lang("es", "Español (Spanish)"),
+            new Lang("ru", "Русский (Russian)"),
+            new Lang("ja", "日本語 (Japanese)"),
+            new Lang("ko", "한국어 (Korean)"),
+            new Lang("fr", "Français (French)"),
+            new Lang("de", "Deutsch (German)"),
+            new Lang("pt", "Português (Portuguese)")
+    };
+
     // Preference Keys - Incoming
     private static final String PREF_ENABLED = "chat-translator-enabled";
     private static final String PREF_TRANSLATE_SERVER = "chat-translator-server-enabled";
@@ -83,6 +106,14 @@ public class TranslatorConfig {
     public static boolean isAddPrefix() { return Core.settings.getBool(PREF_ADD_PREFIX, DEFAULT_ADD_PREFIX); }
     public static String getPrefixContent() { return Core.settings.getString(PREF_PREFIX_CONTENT, DEFAULT_PREFIX_CONTENT); }
     public static String getTargetLanguage() { return Core.settings.getString(PREF_TARGET_LANG, DEFAULT_TARGET_LANG); }
+
+    public static String getTargetLanguageName() {
+        String code = getTargetLanguage();
+        for (Lang l : LANGUAGES) {
+            if (l.code.equals(code)) return l.name;
+        }
+        return code;
+    }
 
     public static boolean isDebugMode() { return Core.settings.getBool(PREF_DEBUG_MODE, DEFAULT_DEBUG_MODE); }
     public static boolean isDebugInChat() { return Core.settings.getBool(PREF_DEBUG_IN_CHAT, DEFAULT_DEBUG_IN_CHAT); }

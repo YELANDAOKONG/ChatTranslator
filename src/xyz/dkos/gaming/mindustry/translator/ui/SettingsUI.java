@@ -92,6 +92,14 @@ public class SettingsUI {
     }
 
     private void buildOutgoingSettings(Table table) {
+        // Target Language Selection Button
+        table.table(t -> {
+            t.add(BundleHelper.get("translator.settings.target-lang")).left().padRight(15f);
+            t.button(b -> b.label(() -> TranslatorConfig.getTargetLanguageName()), () -> {
+                showLanguageSelectDialog();
+            }).size(250f, 40f);
+        }).left().padTop(5f).row();
+
         showUiCheck = table.check(BundleHelper.get("translator.settings.show-ui"),
                 TranslatorConfig.isShowUI(),
                 TranslatorConfig::setShowUI).left().get();
@@ -118,6 +126,30 @@ public class SettingsUI {
                 TranslatorConfig.setPrefixContent(TranslatorConfig.DEFAULT_PREFIX_CONTENT);
             }).width(80f).padLeft(10f);
         }).left().padTop(5f).row();
+    }
+
+    private void showLanguageSelectDialog() {
+        Dialog dialog = new Dialog(BundleHelper.get("translator.settings.target-lang"));
+        dialog.closeOnBack();
+
+        dialog.cont.pane(p -> {
+            p.margin(10f);
+            int cols = 0;
+            for (TranslatorConfig.Lang lang : TranslatorConfig.LANGUAGES) {
+                p.button(lang.name, () -> {
+                    TranslatorConfig.setTargetLanguage(lang.code);
+                    dialog.hide();
+                }).size(220f, 50f).pad(4f);
+
+                cols++;
+                if (cols % 2 == 0) {
+                    p.row();
+                }
+            }
+        }).scrollX(false).scrollY(true).maxHeight(400f);
+
+        dialog.addCloseButton();
+        dialog.show();
     }
 
     private void buildDebugSettings(Table table) {

@@ -24,18 +24,16 @@ public class OutgoingTranslatorDialog extends Dialog {
         this.service = service;
         this.chatField = chatField;
 
-        addCloseButton();
+        closeOnBack(); // Allows closing via ESC key
         setup();
+        addCloseButton(); // Adds standard Close button to the bottom 'buttons' table
     }
 
     private void setup() {
         cont.clear();
 
-        cont.add(BundleHelper.get("translator.ui.target-lang")).left();
-        cont.field(TranslatorConfig.getTargetLanguage(), text -> {
-            TranslatorConfig.setTargetLanguage(text);
-        }).width(100f).left().get();
-        cont.row();
+        // Show current target language info
+        cont.add(BundleHelper.get("translator.settings.target-lang") + " [accent]" + TranslatorConfig.getTargetLanguageName() + "[]").left().row();
 
         cont.check(BundleHelper.get("translator.settings.auto-translate"),
                 TranslatorConfig.isAutoTranslate(),
@@ -44,11 +42,20 @@ public class OutgoingTranslatorDialog extends Dialog {
         cont.image().color(Color.gray).fillX().height(3f).pad(10f, 0, 10f, 0).row();
 
         cont.add(BundleHelper.get("translator.ui.manual-input")).left().row();
-        inputArea = cont.area("", text -> {}).width(400f).height(150f).get();
+
+        inputArea = cont.area("", text -> {}).width(400f).height(120f).get();
         cont.row();
 
         cont.button(BundleHelper.get("translator.ui.translate-insert"), this::doManualTranslate)
                 .width(400f).padTop(10f).row();
+    }
+
+    @Override
+    public Dialog show() {
+        Dialog result = super.show();
+        // Request focus so players can type immediately upon opening
+        Core.scene.setKeyboardFocus(inputArea);
+        return result;
     }
 
     private void doManualTranslate() {
@@ -67,6 +74,7 @@ public class OutgoingTranslatorDialog extends Dialog {
                     chatField.setText(translated);
                     hide();
 
+                    // Re-focus original chat box
                     Core.app.post(() -> {
                         Core.scene.setKeyboardFocus(chatField);
                         chatField.setCursorPosition(translated.length());
