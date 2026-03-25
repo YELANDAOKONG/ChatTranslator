@@ -80,6 +80,7 @@ jar{
 
     from(projectDir){
         include "mod.hjson"
+        include "bundles/**"
     }
 
     from("assets/"){
