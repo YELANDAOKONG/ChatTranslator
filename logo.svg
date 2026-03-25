@@ -1,0 +1,34 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="256" height="256" fill="#2b2b2b" rx="20"/>
+    <!-- Outer border -->
+    <rect x="8" y="8" width="240" height="240" fill="none" stroke="#4a9eff" stroke-width="4" rx="16"/>
+    <!-- Left chat bubble (original message) -->
+    <path d="M 50 80 L 120 80 L 120 130 L 70 130 L 50 145 Z"
+          fill="#5a5a5a" stroke="#4a9eff" stroke-width="3"/>
+    <!-- Text symbol "A" in left bubble -->
+    <text x="85" y="115" font-family="Arial, sans-serif" font-size="28" font-weight="bold"
+          fill="#4a9eff" text-anchor="middle">A</text>
+    <!-- Right chat bubble (translated message) -->
+    <path d="M 206 110 L 136 110 L 136 160 L 186 160 L 206 175 Z"
+          fill="#5a5a5a" stroke="#6bde84" stroke-width="3"/>
+    <!-- Text symbol "字" in right bubble -->
+    <text x="171" y="145" font-family="Arial, sans-serif" font-size="28" font-weight="bold"
+          fill="#6bde84" text-anchor="middle">字</text>
+    <!-- Translation arrow (center) -->
+    <g transform="translate(128, 120)">
+        <!-- Arrow line -->
+        <line x1="-25" y1="0" x2="25" y2="0" stroke="#ffd37f" stroke-width="5" stroke-linecap="round"/>
+        <!-- Arrow head -->
+        <polygon points="25,0 15,6 15,-6" fill="#ffd37f"/>
+        <!-- Arrow decorative circles -->
+        <circle cx="-15" cy="0" r="3" fill="#ffd37f"/>
+        <circle cx="0" cy="0" r="3" fill="#ffd37f"/>
+        <circle cx="15" cy="0" r="3" fill="#ffd37f"/>
+    </g>
+    <!-- Globe icon at bottom -->
+    <circle cx="128" cy="200" r="24" fill="none" stroke="#4a9eff" stroke-width="3"/>
+    <ellipse cx="128" cy="200" rx="12" ry="24" fill="none" stroke="#4a9eff" stroke-width="2"/>
+    <line x1="104" y1="200" x2="152" y2="200" stroke="#4a9eff" stroke-width="2"/>
+    <line x1="128" y1="176" x2="128" y2="224" stroke="#4a9eff" stroke-width="2"/>
+</svg>

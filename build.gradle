@@ -83,6 +83,10 @@ jar{
         include "bundles/**"
     }
 
+    from(projectDir){
+        include "sprites/**"
+    }
+
     from("assets/"){
         include "**"
     }
