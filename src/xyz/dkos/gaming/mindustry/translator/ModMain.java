@@ -14,6 +14,7 @@ import arc.util.Log;
 import mindustry.Vars;
 import mindustry.game.EventType.PlayerChatEvent;
 import mindustry.gen.Icon;
+import mindustry.gen.Player;
 import mindustry.mod.Mod;
 
 import xyz.dkos.gaming.mindustry.translator.utils.BingTranslator;
@@ -24,6 +25,8 @@ public class ModMain extends Mod {
 
     private static final String PREF_ENABLED = "chat-translator-enabled";
     private static final String PREF_TRANSLATE_SERVER = "chat-translator-server-enabled";
+    private static final String PREF_HIDE_ORIGINAL = "chat-translator-hide-original";
+    private static final String PREF_PRESERVE_COLOR = "chat-translator-preserve-color";
     private static final String PREF_ENGINE = "chat-translator-engine";
     private static final String PREF_DEBUG_MODE = "chat-translator-debug";
     private static final String PREF_DEBUG_IN_CHAT = "chat-translator-debug-chat";
@@ -39,6 +42,8 @@ public class ModMain extends Mod {
     // Default Configuration Values
     private static final boolean DEFAULT_ENABLED = true;
     private static final boolean DEFAULT_TRANSLATE_SERVER = false;
+    private static final boolean DEFAULT_HIDE_ORIGINAL = false;
+    private static final boolean DEFAULT_PRESERVE_COLOR = true;
     private static final boolean DEFAULT_DEBUG_MODE = false;
     private static final boolean DEFAULT_DEBUG_IN_CHAT = false;
     private static final String DEFAULT_ENGINE = "Bing";
@@ -126,6 +131,16 @@ public class ModMain extends Mod {
             CheckBox serverCheck = table.check(bundle("translator.settings.server"),
                     Core.settings.getBool(PREF_TRANSLATE_SERVER, DEFAULT_TRANSLATE_SERVER),
                     b -> Core.settings.put(PREF_TRANSLATE_SERVER, b)).left().get();
+            table.row();
+
+            CheckBox hideOriginalCheck = table.check(bundle("translator.settings.hide-original"),
+                    Core.settings.getBool(PREF_HIDE_ORIGINAL, DEFAULT_HIDE_ORIGINAL),
+                    b -> Core.settings.put(PREF_HIDE_ORIGINAL, b)).left().get();
+            table.row();
+
+            CheckBox preserveColorCheck = table.check(bundle("translator.settings.preserve-color"),
+                    Core.settings.getBool(PREF_PRESERVE_COLOR, DEFAULT_PRESERVE_COLOR),
+                    b -> Core.settings.put(PREF_PRESERVE_COLOR, b)).left().get();
             table.row();
 
             CheckBox debugCheck = table.check(bundle("translator.settings.debug"),
@@ -257,6 +272,8 @@ public class ModMain extends Mod {
                         bundle("translator.message.reset-confirm"), () -> {
                             Core.settings.remove(PREF_ENABLED);
                             Core.settings.remove(PREF_TRANSLATE_SERVER);
+                            Core.settings.remove(PREF_HIDE_ORIGINAL);
+                            Core.settings.remove(PREF_PRESERVE_COLOR);
                             Core.settings.remove(PREF_DEBUG_MODE);
                             Core.settings.remove(PREF_DEBUG_IN_CHAT);
                             Core.settings.remove(PREF_ENGINE);
@@ -268,6 +285,8 @@ public class ModMain extends Mod {
 
                             enabledCheck.setChecked(DEFAULT_ENABLED);
                             serverCheck.setChecked(DEFAULT_TRANSLATE_SERVER);
+                            hideOriginalCheck.setChecked(DEFAULT_HIDE_ORIGINAL);
+                            preserveColorCheck.setChecked(DEFAULT_PRESERVE_COLOR);
                             debugCheck.setChecked(DEFAULT_DEBUG_MODE);
                             debugChatCheck.setChecked(DEFAULT_DEBUG_IN_CHAT);
                             endpointField.setText(DEFAULT_OPENAI_ENDPOINT);
@@ -284,7 +303,19 @@ public class ModMain extends Mod {
 
     private void registerChatListener() {
         Events.on(PlayerChatEvent.class, event -> {
-            debugLog("Chat event fired - Player: " + (event.player == null ? "[Server]" : event.player.name) + ", Message: " + event.message);
+            // Enhanced debugging for server messages
+            debugLog("=== Chat Event Details ===");
+            debugLog("Player object: " + event.player);
+            debugLog("Player null?: " + (event.player == null));
+            if (event.player != null) {
+                debugLog("Player name: " + event.player.name);
+                debugLog("Player coloredName: " + event.player.coloredName());
+                debugLog("Player isLocal: " + event.player.isLocal());
+                debugLog("Player isAdmin: " + event.player.admin);
+                debugLog("Player team: " + event.player.team());
+            }
+            debugLog("Message: " + event.message);
+            debugLog("=========================");
 
             if (!Core.settings.getBool(PREF_ENABLED, DEFAULT_ENABLED) || event.message == null || event.message.trim().isEmpty()) {
                 debugLog("Translation skipped - Disabled or empty message");
@@ -292,7 +323,7 @@ public class ModMain extends Mod {
             }
 
             boolean isServerMessage = (event.player == null);
-            boolean isOwnMessage = (event.player == Vars.player);
+            boolean isOwnMessage = !isServerMessage && (event.player == Vars.player);
 
             if (isOwnMessage) {
                 debugLog("Translation skipped - Own message");
@@ -315,12 +346,32 @@ public class ModMain extends Mod {
                 return;
             }
 
-            String senderName = isServerMessage ? "[Server]" : event.player.name;
-            debugLog("Intercepted message from " + senderName + ": " + event.message);
+            // Get player name with or without color
+            boolean preserveColor = Core.settings.getBool(PREF_PRESERVE_COLOR, DEFAULT_PRESERVE_COLOR);
+            String senderName;
+            if (isServerMessage) {
+                senderName = "[Server]";
+            } else {
+                senderName = preserveColor ? event.player.coloredName() : event.player.name;
+            }
+
+            debugLog("Sender name (preserve color=" + preserveColor + "): " + senderName);
+            debugLog("Intercepted message: " + event.message);
+
+            boolean hideOriginal = Core.settings.getBool(PREF_HIDE_ORIGINAL, DEFAULT_HIDE_ORIGINAL);
 
             Cons<String> onSuccess = translated -> {
                 if (!translated.equalsIgnoreCase(event.message.trim()) && Vars.ui != null && Vars.ui.chatfrag != null) {
-                    Vars.ui.chatfrag.addMessage("[lightgray][TR] " + senderName + "[white]: " + translated);
+                    String displayMessage;
+                    if (hideOriginal) {
+                        // Only show translated message without [TR] prefix
+                        displayMessage = senderName + "[white]: " + translated;
+                    } else {
+                        // Show translation with [TR] prefix
+                        displayMessage = "[lightgray][TR] " + senderName + "[white]: " + translated;
+                    }
+
+                    Vars.ui.chatfrag.addMessage(displayMessage);
                     debugLog("Translation displayed: " + translated);
                 }
             };
