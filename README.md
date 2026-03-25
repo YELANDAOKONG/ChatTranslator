@@ -2,7 +2,7 @@
 
 A Mindustry mod that automatically translates chat messages in real-time, supporting multiple translation engines including Google, Bing, and OpenAI.
 
-[//]: # (![Settings Interface]&#40;./README.png&#41;)
+![Settings Interface](./README.png)
 
 ## Features
 
