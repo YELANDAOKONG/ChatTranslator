@@ -51,7 +51,6 @@ public class ChatInputTranslator {
             return;
         }
         try {
-            // Use Arc's Reflect utility to directly fetch the private 'chatfield' variable
             chatField = Reflect.get(Vars.ui.chatfrag, "chatfield");
         } catch (Exception e) {
             DebugLogger.log("Failed to get chat field via reflection: " + e.getMessage());
@@ -59,23 +58,21 @@ public class ChatInputTranslator {
     }
 
     private void setupInterceptor() {
-        // Intercepts enter key to provide auto-translation
         chatField.getListeners().insert(0, new InputListener() {
             @Override
             public boolean keyDown(InputEvent event, KeyCode keycode) {
                 if (keycode == KeyCode.enter) {
                     String text = chatField.getText();
 
-                    // Ignore empty inputs or commands
                     if (text == null || text.trim().isEmpty() || text.startsWith("/")) {
                         return false;
                     }
 
                     if (TranslatorConfig.isAutoTranslate()) {
-                        event.cancel(); // Prevent default send
+                        event.cancel();
 
                         chatField.setText("");
-                        Core.scene.setKeyboardFocus(null); // Deselect to close typing UI
+                        Core.scene.setKeyboardFocus(null);
 
                         doAutoTranslate(text);
                         return true;
@@ -98,7 +95,7 @@ public class ChatInputTranslator {
                 },
                 error -> {
                     if (Vars.ui != null && Vars.ui.chatfrag != null) {
-                        Vars.ui.chatfrag.addMessage("[crimson][TR] Failed to auto-translate outgoing message: " + error.getMessage());
+                        Vars.ui.chatfrag.addMessage("[crimson][TR] Failed to auto-translate: " + error.getMessage());
                     }
                 }
         );
@@ -113,20 +110,19 @@ public class ChatInputTranslator {
             new OutgoingTranslatorDialog(translationService, chatField).show();
         }).size(36f);
 
-        // Keep the UI strictly aligned with the chat text box when it is active
         Events.run(Trigger.update, () -> {
             if (chatField == null || !TranslatorConfig.isShowUI()) {
                 uiContainer.visible = false;
                 return;
             }
 
-            // The UI should only show when the player is actively typing in the chat field
-            boolean chatVisible = chatField.parent != null && chatField.parent.visible && Core.scene.getKeyboardFocus() == chatField;
-            uiContainer.visible = chatVisible;
+            boolean chatFocused = Core.scene.getKeyboardFocus() == chatField;
+            boolean isHovering = uiContainer.hasMouse();
 
-            if (chatVisible) {
+            uiContainer.visible = chatFocused || isHovering;
+
+            if (uiContainer.visible) {
                 Vec2 pos = chatField.localToStageCoordinates(Tmp.v1.set(chatField.getWidth(), chatField.getHeight()));
-                // Positions exactly aligned with the right side of the chat field, just slightly above it
                 uiContainer.setPosition(pos.x - uiContainer.getPrefWidth(), pos.y + 2f);
             }
         });

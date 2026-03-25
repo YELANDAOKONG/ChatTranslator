@@ -1,5 +1,6 @@
 package xyz.dkos.gaming.mindustry.translator.ui;
 
+import arc.Core;
 import arc.graphics.Color;
 import arc.scene.ui.Dialog;
 import arc.scene.ui.TextArea;
@@ -30,21 +31,18 @@ public class OutgoingTranslatorDialog extends Dialog {
     private void setup() {
         cont.clear();
 
-        // Target Language Configuration
         cont.add(BundleHelper.get("translator.ui.target-lang")).left();
         cont.field(TranslatorConfig.getTargetLanguage(), text -> {
             TranslatorConfig.setTargetLanguage(text);
         }).width(100f).left().get();
         cont.row();
 
-        // Auto Translate Mode Configuration
         cont.check(BundleHelper.get("translator.settings.auto-translate"),
                 TranslatorConfig.isAutoTranslate(),
                 TranslatorConfig::setAutoTranslate).left().row();
 
         cont.image().color(Color.gray).fillX().height(3f).pad(10f, 0, 10f, 0).row();
 
-        // Manual Translation Execution Configuration
         cont.add(BundleHelper.get("translator.ui.manual-input")).left().row();
         inputArea = cont.area("", text -> {}).width(400f).height(150f).get();
         cont.row();
@@ -68,6 +66,11 @@ public class OutgoingTranslatorDialog extends Dialog {
                     Vars.ui.loadfrag.hide();
                     chatField.setText(translated);
                     hide();
+
+                    Core.app.post(() -> {
+                        Core.scene.setKeyboardFocus(chatField);
+                        chatField.setCursorPosition(translated.length());
+                    });
                 },
                 error -> {
                     Vars.ui.loadfrag.hide();
