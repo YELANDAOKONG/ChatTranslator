@@ -23,7 +23,7 @@ public class TranslationService {
     private final OpenAITranslator openAITranslator = new OpenAITranslator();
 
     /**
-     * Translates text using the configured translation engine.
+     * Translates text into the client's current game language.
      *
      * @param text      Text to translate
      * @param onSuccess Callback with translated text
@@ -32,6 +32,19 @@ public class TranslationService {
     public void translate(String text, Cons<String> onSuccess, Cons<Throwable> onFailure) {
         String engine = TranslatorConfig.getEngine();
         String targetLang = TranslatorConfig.getClientLanguage(engine);
+        translate(text, targetLang, onSuccess, onFailure);
+    }
+
+    /**
+     * Translates text to a specifically requested target language.
+     *
+     * @param text       Text to translate
+     * @param targetLang Expected language code
+     * @param onSuccess  Callback with translated text
+     * @param onFailure  Callback with error if translation fails
+     */
+    public void translate(String text, String targetLang, Cons<String> onSuccess, Cons<Throwable> onFailure) {
+        String engine = TranslatorConfig.getEngine();
 
         if (targetLang == null || targetLang.isEmpty()) {
             DebugLogger.log("Translation skipped - Invalid target language");

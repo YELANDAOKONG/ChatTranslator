@@ -8,6 +8,7 @@ import mindustry.mod.Mod;
 
 import xyz.dkos.gaming.mindustry.translator.handler.ChatHandler;
 import xyz.dkos.gaming.mindustry.translator.service.TranslationService;
+import xyz.dkos.gaming.mindustry.translator.ui.ChatInputTranslator;
 import xyz.dkos.gaming.mindustry.translator.ui.SettingsUI;
 
 /**
@@ -18,6 +19,7 @@ public class ModMain extends Mod {
     private TranslationService translationService;
     private ChatHandler chatHandler;
     private SettingsUI settingsUI;
+    private ChatInputTranslator chatInputTranslator;
 
     public ModMain() {
         Log.info("Chat Translator Loaded.");
@@ -41,6 +43,7 @@ public class ModMain extends Mod {
         translationService = new TranslationService();
         chatHandler = new ChatHandler(translationService);
         settingsUI = new SettingsUI(translationService);
+        chatInputTranslator = new ChatInputTranslator(translationService);
     }
 
     private void registerEventListeners() {

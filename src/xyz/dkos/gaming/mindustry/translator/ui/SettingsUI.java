@@ -20,6 +20,12 @@ public class SettingsUI {
     private CheckBox serverCheck;
     private CheckBox hideOriginalCheck;
     private CheckBox preserveColorCheck;
+
+    private CheckBox showUiCheck;
+    private CheckBox autoTranslateCheck;
+    private CheckBox addPrefixCheck;
+    private TextField prefixContentField;
+
     private CheckBox debugCheck;
     private CheckBox debugChatCheck;
     private TextField userAgentField;
@@ -42,16 +48,28 @@ public class SettingsUI {
     }
 
     private void buildContent(Table table) {
-        buildBasicSettings(table);
+        table.add("[cyan]" + BundleHelper.get("translator.settings.incoming-category")).left().row();
+        buildIncomingSettings(table);
+        buildDivider(table);
+
+        table.add("[cyan]" + BundleHelper.get("translator.settings.outgoing-category")).left().row();
+        buildOutgoingSettings(table);
+        buildDivider(table);
+
+        table.add("[cyan]" + BundleHelper.get("translator.settings.engine-category")).left().row();
         buildEngineSelector(table);
         buildUserAgentField(table);
+
+        buildDebugSettings(table);
         buildDivider(table);
+
         buildOpenAISettings(table);
         buildDivider(table);
+
         buildDangerZone(table);
     }
 
-    private void buildBasicSettings(Table table) {
+    private void buildIncomingSettings(Table table) {
         enabledCheck = table.check(BundleHelper.get("translator.settings.enabled"),
                 TranslatorConfig.isEnabled(),
                 TranslatorConfig::setEnabled).left().get();
@@ -71,7 +89,38 @@ public class SettingsUI {
                 TranslatorConfig.isPreserveColor(),
                 TranslatorConfig::setPreserveColor).left().get();
         table.row();
+    }
 
+    private void buildOutgoingSettings(Table table) {
+        showUiCheck = table.check(BundleHelper.get("translator.settings.show-ui"),
+                TranslatorConfig.isShowUI(),
+                TranslatorConfig::setShowUI).left().get();
+        table.row();
+
+        autoTranslateCheck = table.check(BundleHelper.get("translator.settings.auto-translate"),
+                TranslatorConfig.isAutoTranslate(),
+                TranslatorConfig::setAutoTranslate).left().get();
+        table.row();
+
+        addPrefixCheck = table.check(BundleHelper.get("translator.settings.add-prefix"),
+                TranslatorConfig.isAddPrefix(),
+                TranslatorConfig::setAddPrefix).left().get();
+        table.row();
+
+        prefixContentField = new TextField(TranslatorConfig.getPrefixContent());
+        table.table(t -> {
+            t.add(BundleHelper.get("translator.settings.prefix-content")).left().padRight(5f);
+            prefixContentField.changed(() -> TranslatorConfig.setPrefixContent(prefixContentField.getText()));
+            t.add(prefixContentField).width(200f);
+
+            t.button(BundleHelper.get("translator.settings.reset"), () -> {
+                prefixContentField.setText(TranslatorConfig.DEFAULT_PREFIX_CONTENT);
+                TranslatorConfig.setPrefixContent(TranslatorConfig.DEFAULT_PREFIX_CONTENT);
+            }).width(80f).padLeft(10f);
+        }).left().padTop(5f).row();
+    }
+
+    private void buildDebugSettings(Table table) {
         debugCheck = table.check(BundleHelper.get("translator.settings.debug"),
                 TranslatorConfig.isDebugMode(),
                 TranslatorConfig::setDebugMode).left().get();
@@ -225,6 +274,12 @@ public class SettingsUI {
         serverCheck.setChecked(TranslatorConfig.DEFAULT_TRANSLATE_SERVER);
         hideOriginalCheck.setChecked(TranslatorConfig.DEFAULT_HIDE_ORIGINAL);
         preserveColorCheck.setChecked(TranslatorConfig.DEFAULT_PRESERVE_COLOR);
+
+        showUiCheck.setChecked(TranslatorConfig.DEFAULT_SHOW_UI);
+        autoTranslateCheck.setChecked(TranslatorConfig.DEFAULT_AUTO_TRANSLATE);
+        addPrefixCheck.setChecked(TranslatorConfig.DEFAULT_ADD_PREFIX);
+        prefixContentField.setText(TranslatorConfig.DEFAULT_PREFIX_CONTENT);
+
         debugCheck.setChecked(TranslatorConfig.DEFAULT_DEBUG_MODE);
         debugChatCheck.setChecked(TranslatorConfig.DEFAULT_DEBUG_IN_CHAT);
         userAgentField.setText(TranslatorConfig.DEFAULT_USER_AGENT);
