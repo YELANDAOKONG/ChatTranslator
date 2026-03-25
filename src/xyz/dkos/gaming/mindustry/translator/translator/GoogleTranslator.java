@@ -11,12 +11,11 @@ import arc.Core;
 import arc.func.Cons;
 import arc.util.serialization.Jval;
 
+import xyz.dkos.gaming.mindustry.translator.config.TranslatorConfig;
 import xyz.dkos.gaming.mindustry.translator.core.ITranslator;
 import xyz.dkos.gaming.mindustry.translator.utils.DebugLogger;
 
 public class GoogleTranslator implements ITranslator {
-
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
     private static final String API_URL = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=%s";
 
     @Override
@@ -36,7 +35,7 @@ public class GoogleTranslator implements ITranslator {
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
-            conn.setRequestProperty("User-Agent", USER_AGENT);
+            conn.setRequestProperty("User-Agent", TranslatorConfig.getUserAgent());
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(10000);
 

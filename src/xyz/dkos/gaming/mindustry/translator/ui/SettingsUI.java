@@ -1,9 +1,6 @@
 package xyz.dkos.gaming.mindustry.translator.ui;
 
-import arc.scene.ui.CheckBox;
-import arc.scene.ui.Slider;
-import arc.scene.ui.TextArea;
-import arc.scene.ui.TextField;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Table;
 import mindustry.Vars;
 import mindustry.gen.Icon;
@@ -14,9 +11,6 @@ import xyz.dkos.gaming.mindustry.translator.utils.BundleHelper;
 
 import java.util.Locale;
 
-/**
- * Builds and manages the settings UI for the translator mod.
- */
 public class SettingsUI {
 
     private final TranslationService translationService;
@@ -28,6 +22,7 @@ public class SettingsUI {
     private CheckBox preserveColorCheck;
     private CheckBox debugCheck;
     private CheckBox debugChatCheck;
+    private TextField userAgentField;
     private TextField endpointField;
     private TextField modelField;
     private TextField keyField;
@@ -38,9 +33,6 @@ public class SettingsUI {
         this.translationService = translationService;
     }
 
-    /**
-     * Builds the settings UI in the game settings menu.
-     */
     public void build() {
         if (Vars.ui == null || Vars.ui.settings == null) {
             return;
@@ -52,6 +44,7 @@ public class SettingsUI {
     private void buildContent(Table table) {
         buildBasicSettings(table);
         buildEngineSelector(table);
+        buildUserAgentField(table);
         buildDivider(table);
         buildOpenAISettings(table);
         buildDivider(table);
@@ -100,6 +93,20 @@ public class SettingsUI {
                 int nextIndex = (currentIndex + 1) % TranslatorConfig.ENGINES.length;
                 TranslatorConfig.setEngine(TranslatorConfig.ENGINES[nextIndex]);
             }).size(120f, 40f);
+        }).left().padTop(5f).row();
+    }
+
+    private void buildUserAgentField(Table table) {
+        userAgentField = new TextField(TranslatorConfig.getUserAgent());
+        table.table(t -> {
+            t.add(BundleHelper.get("translator.settings.user-agent")).left().padRight(5f);
+            userAgentField.changed(() -> TranslatorConfig.setUserAgent(userAgentField.getText()));
+            t.add(userAgentField).width(300f);
+
+            t.button(BundleHelper.get("translator.settings.reset"), () -> {
+                userAgentField.setText(TranslatorConfig.DEFAULT_USER_AGENT);
+                TranslatorConfig.setUserAgent(TranslatorConfig.DEFAULT_USER_AGENT);
+            }).width(80f).padLeft(10f);
         }).left().padTop(5f).row();
     }
 
@@ -220,6 +227,7 @@ public class SettingsUI {
         preserveColorCheck.setChecked(TranslatorConfig.DEFAULT_PRESERVE_COLOR);
         debugCheck.setChecked(TranslatorConfig.DEFAULT_DEBUG_MODE);
         debugChatCheck.setChecked(TranslatorConfig.DEFAULT_DEBUG_IN_CHAT);
+        userAgentField.setText(TranslatorConfig.DEFAULT_USER_AGENT);
         endpointField.setText(TranslatorConfig.DEFAULT_OPENAI_ENDPOINT);
         modelField.setText(TranslatorConfig.DEFAULT_OPENAI_MODEL);
         keyField.setText(TranslatorConfig.DEFAULT_OPENAI_KEY);

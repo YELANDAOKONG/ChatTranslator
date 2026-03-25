@@ -16,6 +16,8 @@ public class TranslatorConfig {
     private static final String PREF_DEBUG_MODE = "chat-translator-debug";
     private static final String PREF_DEBUG_IN_CHAT = "chat-translator-debug-chat";
 
+    private static final String PREF_USER_AGENT = "chat-translator-user-agent";
+
     private static final String PREF_OPENAI_ENDPOINT = "chat-translator-openai-endpoint";
     private static final String PREF_OPENAI_MODEL = "chat-translator-openai-model";
     private static final String PREF_OPENAI_KEY = "chat-translator-openai-key";
@@ -30,6 +32,8 @@ public class TranslatorConfig {
     public static final boolean DEFAULT_DEBUG_MODE = false;
     public static final boolean DEFAULT_DEBUG_IN_CHAT = false;
     public static final String DEFAULT_ENGINE = "Bing";
+
+    public static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
     public static final String DEFAULT_OPENAI_ENDPOINT = "https://api.openai.com/v1";
     public static final String DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo";
@@ -82,6 +86,10 @@ public class TranslatorConfig {
         return Core.settings.getString(PREF_ENGINE, DEFAULT_ENGINE);
     }
 
+    public static String getUserAgent() {
+        return Core.settings.getString(PREF_USER_AGENT, DEFAULT_USER_AGENT);
+    }
+
     public static String getOpenAIEndpoint() {
         return Core.settings.getString(PREF_OPENAI_ENDPOINT, DEFAULT_OPENAI_ENDPOINT);
     }
@@ -131,6 +139,10 @@ public class TranslatorConfig {
         Core.settings.put(PREF_ENGINE, value);
     }
 
+    public static void setUserAgent(String value) {
+        Core.settings.put(PREF_USER_AGENT, value);
+    }
+
     public static void setOpenAIEndpoint(String value) {
         Core.settings.put(PREF_OPENAI_ENDPOINT, value);
     }
@@ -162,6 +174,7 @@ public class TranslatorConfig {
         Core.settings.remove(PREF_DEBUG_MODE);
         Core.settings.remove(PREF_DEBUG_IN_CHAT);
         Core.settings.remove(PREF_ENGINE);
+        Core.settings.remove(PREF_USER_AGENT);
         Core.settings.remove(PREF_OPENAI_ENDPOINT);
         Core.settings.remove(PREF_OPENAI_MODEL);
         Core.settings.remove(PREF_OPENAI_KEY);

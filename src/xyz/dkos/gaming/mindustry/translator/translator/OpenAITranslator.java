@@ -20,8 +20,6 @@ import xyz.dkos.gaming.mindustry.translator.utils.DebugLogger;
  * Supports custom prompts, temperature control, and multiple models.
  */
 public class OpenAITranslator implements ITranslator {
-
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
     private static final String API_PATH = "/chat/completions";
 
     @Override
@@ -134,7 +132,7 @@ public class OpenAITranslator implements ITranslator {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Authorization", "Bearer " + apiKey);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        conn.setRequestProperty("User-Agent", USER_AGENT);
+        conn.setRequestProperty("User-Agent", TranslatorConfig.getUserAgent());
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
         conn.setDoOutput(true);
